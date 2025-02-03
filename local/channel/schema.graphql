@@ -1,0 +1,50 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key","@shareable"])
+
+"""
+"""
+type Profile @shareable @key(fields: "patp") {
+  """
+  """
+  patp: String 
+  """
+  """
+  channels: [Channel] 
+}
+
+"""
+"""
+type Channel @shareable @key(fields: "patp") @key(fields: "title"){
+  patp: String 
+
+  """
+  """
+  title: String
+
+  """
+  """
+  files: [File]
+
+  """
+  """
+  blockCount: Int
+}
+
+"""
+"""
+type File @shareable {
+  source: String 
+  title: String 
+}
+
+type Query {
+  """
+  Get a specific order by id. Meant to be used for a detailed view of an order
+  """
+  preview(patp: String): [Channel] @shareable
+  # view(id: ID!): Order
+}
+
+# schema {
+#   query: Query
+# }

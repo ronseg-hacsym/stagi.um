@@ -1,0 +1,38 @@
+aqua Main
+
+import "@fluencelabs/aqua-lib/builtin.aqua"
+import "@fluencelabs/aqua-lib/subnet.aqua"
+
+use "deals.aqua"
+use "hosts.aqua"
+import "services.aqua"
+
+export Stagium, train, isOnlineCheck, recentGossip
+
+data FeedBlock:
+    author: string
+    source: string
+    timestamp: i32
+    vector: i32[]
+    title: string
+    channel: string
+
+service Stagium("stagi.um"):
+    train() -> bool
+    isOnlineCheck() -> bool
+    recentGossip(feedBlock: FeedBlock) -> bool
+
+func train(peer: PeerId) -> bool:
+    on peer:
+        res <- Stagium.train()
+    <- res
+
+func isOnlineCheck(peer: PeerId) -> bool:
+    on peer:
+        res <- Stagium.isOnlineCheck()
+    <- res
+
+func recentGossip(peer: PeerId, feedBlock: FeedBlock) -> bool:
+    on peer:
+        res <- Stagium.recentGossip(feedBlock)
+    <- res

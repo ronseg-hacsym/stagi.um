@@ -1,0 +1,21 @@
+{
+  "name": "local",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev:router": "rover dev --supergraph-config supergraph-config-dev.yaml --router-config router-config-dev.yaml",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@apollo/server": "^4.11.3",
+    "@apollo/subgraph": "^2.9.3",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express4": "link:@apollo/server/express4",
+    "graphql": "^16.10.0"
+  }
+}
