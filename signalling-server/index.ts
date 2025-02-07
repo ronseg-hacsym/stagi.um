@@ -3,23 +3,20 @@ import { Server } from "socket.io";
 // @ts-ignore
 import * as express from 'express';
 import { createServer } from 'node:http';
-// import { Fluence, kras } from '@fluencelabs/js-client'
-// import { isOnlineCheck } from './main'
 
 const app = express();
 const server = createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173'
+    origin: ['http://localhost:5173', 'http://localhost:5174']
   }
 });
 
-server.listen(3000, () => console.log('server running at http://localhost:3000'))
+server.listen(3001, () => console.log('server running at http://localhost:3001'))
 
 const onlinePeers: any = []
 const onlineSockets: any = {}
-// Fluence.connect(kras[0])
 
 io.on('connection', (socket) => {
 	console.log('a user connected')
@@ -45,13 +42,11 @@ io.on('connection', (socket) => {
 				delete onlineSockets[obj[1].socket.id]
 			}
 		})
-		// setTimeout(() => {
-			Object.entries(onlineSockets).map(async (obj: any) => {
-				console.log('online sockets',obj[1].socket.id)
-				obj[1].socket.emit(`online-broadcast`, true)
-			})
-		// },0)
-
+		
+		Object.entries(onlineSockets).map(async (obj: any) => {
+			console.log('online sockets',obj[1].socket.id)
+			obj[1].socket.emit(`online-broadcast`, true)
+		})
 	}, 11000)
 })
 

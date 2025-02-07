@@ -10,12 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@apollo/client": "^3.12.9",
     "@fluencelabs/js-client": "^0.9.0",
     "@urbit/sigil-js": "^2.2.0",
+    "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
+    "browser-level": "^2.0.0",
+    "ethers": "^6.13.5",
+    "graphql": "^16.10.0",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.9",
     "react-dom": "^18.3.1",
+    "react-modal": "^3.16.3",
     "react-multiple-select-dropdown-lite": "^2.0.6",
     "react-sparklines": "^1.7.0",
     "socket.io-client": "^4.8.1",

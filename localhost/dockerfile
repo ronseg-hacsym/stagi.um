@@ -1,0 +1,17 @@
+FROM node:18-alpine
+
+WORKDIR /usr/src/app
+
+COPY package.json ./
+
+RUN npm install -g pnpm
+
+COPY index.js ./ 
+
+WORKDIR /usr/src/app/
+
+RUN pnpm install
+
+EXPOSE 3000
+
+CMD ["pnpm", "start"]

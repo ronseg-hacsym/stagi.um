@@ -18,8 +18,9 @@ import {
 
 // Services
 export interface StagiumDef {
+    explore: (callParams: CallParams$$<null>) => string | Promise<string>;
     isOnlineCheck: (callParams: CallParams$$<null>) => boolean | Promise<boolean>;
-    recentGossip: (feedBlock: { author: string; channel: string; source: string; timestamp: number; description: string; title: string; }, callParams: CallParams$$<'feedBlock'>) => boolean | Promise<boolean>;
+    recentGossip: (feedBlock: { author: string; channel: string; source: string; timestamp: number; vector: number[]; title: string; }, callParams: CallParams$$<'feedBlock'>) => boolean | Promise<boolean>;
     train: (callParams: CallParams$$<null>) => boolean | Promise<boolean>;
 }
 export function registerStagium(service: StagiumDef): void;
@@ -33,6 +34,21 @@ export function registerStagium(...args: any[]) {
     "defaultServiceId": "stagi.um",
     "functions": {
         "fields": {
+            "explore": {
+                "domain": {
+                    "tag": "nil"
+                },
+                "codomain": {
+                    "items": [
+                        {
+                            "name": "string",
+                            "tag": "scalar"
+                        }
+                    ],
+                    "tag": "unlabeledProduct"
+                },
+                "tag": "arrow"
+            },
             "isOnlineCheck": {
                 "domain": {
                     "tag": "nil"
@@ -70,9 +86,12 @@ export function registerStagium(...args: any[]) {
                                     "name": "i32",
                                     "tag": "scalar"
                                 },
-                                "description": {
-                                    "name": "string",
-                                    "tag": "scalar"
+                                "vector": {
+                                    "type": {
+                                        "name": "i32",
+                                        "tag": "scalar"
+                                    },
+                                    "tag": "array"
                                 },
                                 "title": {
                                     "name": "string",
@@ -119,6 +138,144 @@ export function registerStagium(...args: any[]) {
 
 
 // Functions
+export const recentGossip_script = `
+(xor
+ (seq
+  (seq
+   (seq
+    (seq
+     (call %init_peer_id% ("getDataSrv" "-relay-") [] -relay-)
+     (call %init_peer_id% ("getDataSrv" "peer") [] -peer-arg-)
+    )
+    (call %init_peer_id% ("getDataSrv" "feedBlock") [] -feedBlock-arg-)
+   )
+   (xor
+    (seq
+     (seq
+      (new $-ephemeral-stream-
+       (new #-ephemeral-canon-
+        (canon -relay- $-ephemeral-stream-  #-ephemeral-canon-)
+       )
+      )
+      (call -peer-arg- ("stagi.um" "recentGossip") [-feedBlock-arg-] ret)
+     )
+     (new $-ephemeral-stream-
+      (new #-ephemeral-canon-
+       (canon -relay- $-ephemeral-stream-  #-ephemeral-canon-)
+      )
+     )
+    )
+    (seq
+     (seq
+      (new $-ephemeral-stream-
+       (new #-ephemeral-canon-
+        (canon -relay- $-ephemeral-stream-  #-ephemeral-canon-)
+       )
+      )
+      (new $-ephemeral-stream-
+       (new #-ephemeral-canon-
+        (canon %init_peer_id% $-ephemeral-stream-  #-ephemeral-canon-)
+       )
+      )
+     )
+     (fail :error:)
+    )
+   )
+  )
+  (call %init_peer_id% ("callbackSrv" "response") [ret])
+ )
+ (call %init_peer_id% ("errorHandlingSrv" "error") [:error: 0])
+)
+`;
+
+export type RecentGossipArgFeedBlock = { author: string; channel: string; source: string; timestamp: number; vector: number[]; title: string; }
+
+export function recentGossip(
+    peer: string,
+    feedBlock: RecentGossipArgFeedBlock,
+    config?: {ttl?: number}
+): Promise<boolean>;
+
+export function recentGossip(
+    peer: IFluenceClient$$,
+    peer: string,
+    feedBlock: RecentGossipArgFeedBlock,
+    config?: {ttl?: number}
+): Promise<boolean>;
+
+export function recentGossip(...args: any[]) {
+    return callFunction$$(
+        args,
+        {
+    "functionName": "recentGossip",
+    "arrow": {
+        "domain": {
+            "fields": {
+                "peer": {
+                    "name": "string",
+                    "tag": "scalar"
+                },
+                "feedBlock": {
+                    "name": "FeedBlock",
+                    "fields": {
+                        "author": {
+                            "name": "string",
+                            "tag": "scalar"
+                        },
+                        "channel": {
+                            "name": "string",
+                            "tag": "scalar"
+                        },
+                        "source": {
+                            "name": "string",
+                            "tag": "scalar"
+                        },
+                        "timestamp": {
+                            "name": "i32",
+                            "tag": "scalar"
+                        },
+                        "vector": {
+                            "type": {
+                                "name": "i32",
+                                "tag": "scalar"
+                            },
+                            "tag": "array"
+                        },
+                        "title": {
+                            "name": "string",
+                            "tag": "scalar"
+                        }
+                    },
+                    "tag": "struct"
+                }
+            },
+            "tag": "labeledProduct"
+        },
+        "codomain": {
+            "items": [
+                {
+                    "name": "bool",
+                    "tag": "scalar"
+                }
+            ],
+            "tag": "unlabeledProduct"
+        },
+        "tag": "arrow"
+    },
+    "names": {
+        "relay": "-relay-",
+        "getDataSrv": "getDataSrv",
+        "callbackSrv": "callbackSrv",
+        "responseSrv": "callbackSrv",
+        "responseFnName": "response",
+        "errorHandlingSrv": "errorHandlingSrv",
+        "errorFnName": "error"
+    }
+},
+        recentGossip_script
+    );
+}
+
 export const train_script = `
 (xor
  (seq
@@ -217,6 +374,104 @@ export function train(...args: any[]) {
     );
 }
 
+export const explore_script = `
+(xor
+ (seq
+  (seq
+   (seq
+    (call %init_peer_id% ("getDataSrv" "-relay-") [] -relay-)
+    (call %init_peer_id% ("getDataSrv" "peer") [] -peer-arg-)
+   )
+   (xor
+    (seq
+     (seq
+      (new $-ephemeral-stream-
+       (new #-ephemeral-canon-
+        (canon -relay- $-ephemeral-stream-  #-ephemeral-canon-)
+       )
+      )
+      (call -peer-arg- ("stagi.um" "explore") [] ret)
+     )
+     (new $-ephemeral-stream-
+      (new #-ephemeral-canon-
+       (canon -relay- $-ephemeral-stream-  #-ephemeral-canon-)
+      )
+     )
+    )
+    (seq
+     (seq
+      (new $-ephemeral-stream-
+       (new #-ephemeral-canon-
+        (canon -relay- $-ephemeral-stream-  #-ephemeral-canon-)
+       )
+      )
+      (new $-ephemeral-stream-
+       (new #-ephemeral-canon-
+        (canon %init_peer_id% $-ephemeral-stream-  #-ephemeral-canon-)
+       )
+      )
+     )
+     (fail :error:)
+    )
+   )
+  )
+  (call %init_peer_id% ("callbackSrv" "response") [ret])
+ )
+ (call %init_peer_id% ("errorHandlingSrv" "error") [:error: 0])
+)
+`;
+
+export function explore(
+    peer: string,
+    config?: {ttl?: number}
+): Promise<string>;
+
+export function explore(
+    peer: IFluenceClient$$,
+    peer: string,
+    config?: {ttl?: number}
+): Promise<string>;
+
+export function explore(...args: any[]) {
+    return callFunction$$(
+        args,
+        {
+    "functionName": "explore",
+    "arrow": {
+        "domain": {
+            "fields": {
+                "peer": {
+                    "name": "string",
+                    "tag": "scalar"
+                }
+            },
+            "tag": "labeledProduct"
+        },
+        "codomain": {
+            "items": [
+                {
+                    "name": "string",
+                    "tag": "scalar"
+                }
+            ],
+            "tag": "unlabeledProduct"
+        },
+        "tag": "arrow"
+    },
+    "names": {
+        "relay": "-relay-",
+        "getDataSrv": "getDataSrv",
+        "callbackSrv": "callbackSrv",
+        "responseSrv": "callbackSrv",
+        "responseFnName": "response",
+        "errorHandlingSrv": "errorHandlingSrv",
+        "errorFnName": "error"
+    }
+},
+        explore_script
+    );
+}
+
 export const isOnlineCheck_script = `
 (xor
  (seq
@@ -312,140 +567,5 @@ export function isOnlineCheck(...args: any[]) {
     }
 },
         isOnlineCheck_script
-    );
-}
-
-export const recentGossip_script = `
-(xor
- (seq
-  (seq
-   (seq
-    (seq
-     (call %init_peer_id% ("getDataSrv" "-relay-") [] -relay-)
-     (call %init_peer_id% ("getDataSrv" "peer") [] -peer-arg-)
-    )
-    (call %init_peer_id% ("getDataSrv" "feedBlock") [] -feedBlock-arg-)
-   )
-   (xor
-    (seq
-     (seq
-      (new $-ephemeral-stream-
-       (new #-ephemeral-canon-
-        (canon -relay- $-ephemeral-stream-  #-ephemeral-canon-)
-       )
-      )
-      (call -peer-arg- ("stagi.um" "recentGossip") [-feedBlock-arg-] ret)
-     )
-     (new $-ephemeral-stream-
-      (new #-ephemeral-canon-
-       (canon -relay- $-ephemeral-stream-  #-ephemeral-canon-)
-      )
-     )
-    )
-    (seq
-     (seq
-      (new $-ephemeral-stream-
-       (new #-ephemeral-canon-
-        (canon -relay- $-ephemeral-stream-  #-ephemeral-canon-)
-       )
-      )
-      (new $-ephemeral-stream-
-       (new #-ephemeral-canon-
-        (canon %init_peer_id% $-ephemeral-stream-  #-ephemeral-canon-)
-       )
-      )
-     )
-     (fail :error:)
-    )
-   )
-  )
-  (call %init_peer_id% ("callbackSrv" "response") [ret])
- )
- (call %init_peer_id% ("errorHandlingSrv" "error") [:error: 0])
-)
-`;
-
-export type RecentGossipArgFeedBlock = { author: string; channel: string; source: string; timestamp: number; description: string; title: string; }
-
-export function recentGossip(
-    peer: string,
-    feedBlock: RecentGossipArgFeedBlock,
-    config?: {ttl?: number}
-): Promise<boolean>;
-
-export function recentGossip(
-    peer: IFluenceClient$$,
-    peer: string,
-    feedBlock: RecentGossipArgFeedBlock,
-    config?: {ttl?: number}
-): Promise<boolean>;
-
-export function recentGossip(...args: any[]) {
-    return callFunction$$(
-        args,
-        {
-    "functionName": "recentGossip",
-    "arrow": {
-        "domain": {
-            "fields": {
-                "peer": {
-                    "name": "string",
-                    "tag": "scalar"
-                },
-                "feedBlock": {
-                    "name": "FeedBlock",
-                    "fields": {
-                        "author": {
-                            "name": "string",
-                            "tag": "scalar"
-                        },
-                        "channel": {
-                            "name": "string",
-                            "tag": "scalar"
-                        },
-                        "source": {
-                            "name": "string",
-                            "tag": "scalar"
-                        },
-                        "timestamp": {
-                            "name": "i32",
-                            "tag": "scalar"
-                        },
-                        "description": {
-                            "name": "string",
-                            "tag": "scalar"
-                        },
-                        "title": {
-                            "name": "string",
-                            "tag": "scalar"
-                        }
-                    },
-                    "tag": "struct"
-                }
-            },
-            "tag": "labeledProduct"
-        },
-        "codomain": {
-            "items": [
-                {
-                    "name": "bool",
-                    "tag": "scalar"
-                }
-            ],
-            "tag": "unlabeledProduct"
-        },
-        "tag": "arrow"
-    },
-    "names": {
-        "relay": "-relay-",
-        "getDataSrv": "getDataSrv",
-        "callbackSrv": "callbackSrv",
-        "responseSrv": "callbackSrv",
-        "responseFnName": "response",
-        "errorHandlingSrv": "errorHandlingSrv",
-        "errorFnName": "error"
-    }
-},
-        recentGossip_script
     );
 }

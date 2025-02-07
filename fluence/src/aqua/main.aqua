@@ -7,20 +7,26 @@ use "deals.aqua"
 use "hosts.aqua"
 import "services.aqua"
 
-export Stagium, train, isOnlineCheck, recentGossip
+export Stagium, train, isOnlineCheck, recentGossip, explore
 
 data FeedBlock:
     author: string
     source: string
     timestamp: i32
-    vector: i32[]
+    vector: []i32
     title: string
     channel: string
 
 service Stagium("stagi.um"):
+    explore() -> string
     train() -> bool
     isOnlineCheck() -> bool
     recentGossip(feedBlock: FeedBlock) -> bool
+
+func explore(peer: PeerId) -> string:
+    on peer:
+        res <- Stagium.explore()
+    <- res
 
 func train(peer: PeerId) -> bool:
     on peer:

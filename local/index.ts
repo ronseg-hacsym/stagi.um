@@ -44,7 +44,9 @@ export const startSubgraphs = async (httpPort: any) => {
     const path = `/${subgraphConfig!.name!}/graphql`;
     app.use(
       path,
-      cors(),
+      cors({
+        // origin: 'http://localhost:5173'
+      }),
       bodyParser.json(),
       expressMiddleware(server, {
         context: async ({ req }: any) => ({ headers: req.headers })

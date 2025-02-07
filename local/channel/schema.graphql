@@ -1,50 +1,51 @@
 extend schema
   @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key","@shareable"])
 
-"""
-"""
-type Profile @shareable @key(fields: "patp") {
-  """
-  """
-  patp: String 
-  """
-  """
-  channels: [Channel] 
+type Raw {
+  source: String
+  title: String
+  connections: [String]
 }
 
-"""
-"""
-type Channel @shareable @key(fields: "patp") @key(fields: "title"){
-  patp: String 
+type File {
+  raw: Raw
+  vectors: [[Float]]
+  avg_vector: [Float]
+}
 
-  """
-  """
-  title: String
-
-  """
-  """
-  files: [File]
-
-  """
-  """
+type Block {
+  id: String
+  preview: [File]
   blockCount: Int
 }
 
-"""
-"""
-type File @shareable {
-  source: String 
-  title: String 
+type ChannelConnections {
+  totalChannels: [String]
+  connections: [String]
+}
+
+type Files @shareable {
+  files: [Block]
+}
+
+type Status @shareable {
+  status: Int
 }
 
 type Query {
-  """
-  Get a specific order by id. Meant to be used for a detailed view of an order
-  """
-  preview(patp: String): [Channel] @shareable
-  # view(id: ID!): Order
+  preview: Files @shareable
+  status: Status @shareable
+  channel(title: String): Files @shareable
+  connections(url: String): ChannelConnections @shareable
 }
 
-# schema {
-#   query: Query
-# }
+type Mutation {
+  channel(title: String): Status @shareable
+  addToChannel(channel: String, source: String, title: String, connections: [String], vectors: [[Float]], avg_vector: [Float]): Status @shareable
+  removeChannel(title: String): Status @shareable
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}
